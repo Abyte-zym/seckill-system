@@ -5,26 +5,56 @@
 ## 技术栈
 Spring Cloud Alibaba + Nacos + Sentinel + RocketMQ + Redis + MySQL + Docker
 
-## 架构
+## 架构图
+
 ```
-用户请求 → Gateway(鉴权+路由) → 秒杀服务
-                                    ├─ Redis Lua脚本(库存扣减)
-                                    ├─ RocketMQ(异步下单)  
-                                    ├─ Sentinel(限流熔断)
-                                    └─ MySQL(订单持久化)
+┌──────────┐     ┌──────────┐     ┌──────────────┐
+│  Gateway │────▶│  Seckill │────▶│    Redis     │
+│  (鉴权)  │     │  Service │     │ (库存预减+Lua)│
+└──────────┘     └────┬─────┘     └──────────────┘
+                      │
+                 ┌────▼─────┐
+                 │ RocketMQ │  (异步下单削峰)
+                 └────┬─────┘
+                      │
+                 ┌────▼─────┐
+                 │   MySQL  │  (订单持久化)
+                 └──────────┘
 ```
 
 ## 核心设计
-- **库存扣减**：Redis + Lua脚本原子操作，防超卖
-- **削峰填谷**：RocketMQ异步下单，平滑流量
-- **限流熔断**：Sentinel保护，异常降级
-- **最终一致性**：消息表 + 定时对账
 
-## 快速启动
-```bash
-docker-compose up -d
+### 库存扣减（防超卖）
+```lua
+-- Redis Lua脚本，原子操作
+local stock = redis.call('get', KEYS[1])
+if stock and tonumber(stock) > 0 then
+    redis.call('decr', KEYS[1])
+    return 1  -- 秒杀成功
+else
+    return 0  -- 库存不足
+end
 ```
 
+### 削峰填谷
+- **第一层**：Redis令牌桶限流（网关层，1000 QPS）
+- **第二层**：RocketMQ异步下单（恒定速率消费）
+- **兜底**：Sentinel熔断降级
+
+### 最终一致性
+- 消息表记录待处理订单
+- 定时对账任务扫描补偿
+- 死信队列兜底
+
 ## API
-- `POST /seckill/order` - 秒杀下单
-- `GET /seckill/stock/{id}` - 查询库存
+
+| 接口 | 方法 | 说明 |
+|------|------|------|
+| `/seckill/order` | POST | 秒杀下单 |
+| `/seckill/stock/{id}` | GET | 查询库存 |
+| `/seckill/health` | GET | 健康检查 |
+
+## TODO
+- [ ] RocketMQ消费者完善
+- [ ] Sentinel规则动态配置
+- [ ] 压力测试脚本
