@@ -1,0 +1,23 @@
+# 微服务秒杀系统配置
+spring:
+  application.name: seckill-service
+  datasource:
+    url: jdbc:mysql://localhost:3306/seckill
+    username: root
+    password: ${DB_PASSWORD:123456}
+  data.redis:
+    host: localhost
+    port: 6379
+  cloud:
+    nacos.discovery:
+      server-addr: localhost:8848  # 注册中心
+    sentinel.transport.dashboard:
+      localhost:8080  # Sentinel控制台
+
+# RocketMQ
+rocketmq:
+  name-server: localhost:9876
+  producer.group: seckill-producer
+  consumer.group: seckill-consumer
+
+server.port: 8081

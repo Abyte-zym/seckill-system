@@ -1,0 +1,8 @@
+[
+  {
+    "resource": "doSeckill",
+    "count": 1000.0,
+    "grade": 1,
+    "limitApp": "default"
+  }
+]

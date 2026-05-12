@@ -1,0 +1,93 @@
+server:
+  port: 8080
+
+spring:
+  application:
+    name: seckill-service          # 服务名，与 Nacos 中 dataId 前缀一致
+
+  # ========== 数据源 ==========
+  datasource:
+    type: com.alibaba.druid.pool.DruidDataSource
+    driver-class-name: com.mysql.cj.jdbc.Driver
+    url: jdbc:mysql://mysql:3306/seckill?useUnicode=true&characterEncoding=utf-8&serverTimezone=Asia/Shanghai&rewriteBatchedStatements=true
+    username: root
+    password: 123456
+    druid:
+      initial-size: 10             # 初始连接数
+      min-idle: 10                 # 最小空闲
+      max-active: 100              # 最大活跃
+      max-wait: 3000               # 获取连接超时(ms)
+      test-on-borrow: false
+      test-while-idle: true
+
+  # ========== Redis ==========
+  redis:
+    host: redis
+    port: 6379
+    timeout: 2000ms
+    lettuce:
+      pool:
+        max-active: 64             # 最大连接数
+        max-idle: 16
+        min-idle: 8
+
+  # ========== Nacos 配置中心 ==========
+  cloud:
+    nacos:
+      discovery:
+        server-addr: nacos:8848    # Nacos 注册中心
+        namespace: public
+      config:
+        server-addr: nacos:8848    # Nacos 配置中心
+        namespace: public
+        file-extension: yaml
+        # 共享配置（可选)
+        # shared-configs: seckill-common.yaml
+
+    # ========== Sentinel ==========
+    sentinel:
+      transport:
+        dashboard: sentinel:8080   # Sentinel 控制台地址
+        port: 8719                 # 客户端与控制台通信端口
+      eager: true                  # 饥饿加载（启动即注册）
+      datasource:
+        # 限流规则持久化到 Nacos
+        flow:
+          nacos:
+            server-addr: nacos:8848
+            namespace: public
+            data-id: ${spring.application.name}-flow-rules
+            group-id: SENTINEL_GROUP
+            data-type: json
+            rule-type: flow
+        # 降级规则
+        degrade:
+          nacos:
+            server-addr: nacos:8848
+            namespace: public
+            data-id: ${spring.application.name}-degrade-rules
+            group-id: SENTINEL_GROUP
+            data-type: json
+            rule-type: degrade
+
+# ========== RocketMQ ==========
+rocketmq:
+  name-server: rocketmq:9876
+  producer:
+    group: seckill-producer-group   # 生产者组
+    send-message-timeout: 3000      # 发送超时(ms)
+
+# ========== MyBatis-Plus ==========
+mybatis-plus:
+  mapper-locations: classpath*:/mapper/**/*.xml
+  type-aliases-package: com.seckill.entity
+  configuration:
+    map-underscore-to-camel-case: true
+    log-impl: org.apache.ibatis.logging.stdout.StdOutImpl
+
+# ========== 业务配置 ==========
+seckill:
+  stock-prefix: "seckill:stock:"    # Redis 库存 key 前缀
+  user-bought-prefix: "seckill:user:"  # Redis 用户购买记录前缀
+  order-topic: "seckill-order"      # RocketMQ 下单 Topic
+  limit-per-user: 1                 # 每人限购数量

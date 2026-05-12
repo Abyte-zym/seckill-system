@@ -1,0 +1,11 @@
+spring:
+  cloud:
+    nacos:
+      # bootstrap 阶段即连接 Nacos，拉取 seckill-service.yaml 配置
+      config:
+        server-addr: nacos:8848
+        namespace: public
+        file-extension: yaml
+      discovery:
+        server-addr: nacos:8848
+        namespace: public
