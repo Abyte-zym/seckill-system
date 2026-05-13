@@ -91,3 +91,14 @@ seckill:
   user-bought-prefix: "seckill:user:"  # Redis 用户购买记录前缀
   order-topic: "seckill-order"      # RocketMQ 下单 Topic
   limit-per-user: 1                 # 每人限购数量
+
+# ========== Actuator 监控 ==========
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info,metrics,prometheus
+  metrics:
+    export:
+      prometheus:
+        enabled: true
