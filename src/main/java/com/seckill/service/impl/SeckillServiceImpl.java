@@ -24,6 +24,7 @@ import java.util.UUID;
 @Slf4j
 @Service
 @RequiredArgsConstructor
+@org.springframework.transaction.annotation.Transactional(rollbackFor = Exception.class)
 public class SeckillServiceImpl implements SeckillService {
 
     private final RedisStockService redisStockService;
