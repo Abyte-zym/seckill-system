@@ -20,4 +20,10 @@ rocketmq:
   producer.group: seckill-producer
   consumer.group: seckill-consumer
 
-server.port: 8081
+server:
+  port: 8081
+  # 优雅停机 — K8s Pod终止时先摘流量再等请求处理完
+  shutdown: graceful
+spring:
+  lifecycle:
+    timeout-per-shutdown-phase: 30s
